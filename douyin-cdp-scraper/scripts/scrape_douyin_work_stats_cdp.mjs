@@ -49,14 +49,14 @@ async function getJson(url) {
 async function createPage(cdpBase) {
   try {
     const response = await fetch(`${cdpBase}/json/new?about:blank`, { method: 'PUT' });
-    if (response.ok) return response.json();
+    if (response.ok) return { ...await response.json(), shouldCloseTarget: true };
   } catch {
     // Reuse an existing page if Chrome does not allow creating a new one.
   }
   const pages = await getJson(`${cdpBase}/json/list`);
   const page = pages.find((item) => item.type === 'page' && item.webSocketDebuggerUrl);
   if (!page) throw new Error('No CDP page target available');
-  return page;
+  return { ...page, shouldCloseTarget: false };
 }
 
 function connect(wsUrl) {
@@ -142,13 +142,29 @@ function normalizeCount(value) {
   return Math.round(number);
 }
 
+function formatBeijingTime(timestamp) {
+  if (!Number.isFinite(timestamp)) return null;
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date(timestamp * 1000));
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${byType.year}-${byType.month}-${byType.day} ${byType.hour}:${byType.minute}:${byType.second}`;
+}
+
 function normalizePublishTime(value) {
-  if (value == null || value === '') return { timestamp: null, iso: null, raw: null };
+  if (value == null || value === '') return { timestamp: null, formatted: null, raw: null };
   if (typeof value === 'number' || /^\d+$/.test(String(value))) {
     const raw = Number(value);
-    if (!Number.isFinite(raw) || raw <= 0) return { timestamp: null, iso: null, raw: value };
+    if (!Number.isFinite(raw) || raw <= 0) return { timestamp: null, formatted: null, raw: value };
     const timestamp = raw > 100000000000 ? Math.round(raw / 1000) : raw;
-    return { timestamp, iso: new Date(timestamp * 1000).toISOString(), raw: value };
+    return { timestamp, formatted: formatBeijingTime(timestamp), raw: value };
   }
   const text = String(value).trim();
   const normalized = text
@@ -158,9 +174,9 @@ function normalizePublishTime(value) {
   const parsed = Date.parse(normalized);
   if (Number.isFinite(parsed)) {
     const timestamp = Math.round(parsed / 1000);
-    return { timestamp, iso: new Date(parsed).toISOString(), raw: value };
+    return { timestamp, formatted: formatBeijingTime(timestamp), raw: value };
   }
-  return { timestamp: null, iso: null, raw: value };
+  return { timestamp: null, formatted: null, raw: value };
 }
 
 function firstValue(raw, keys) {
@@ -171,21 +187,30 @@ function firstValue(raw, keys) {
   return null;
 }
 
+function normalizeText(value) {
+  if (value == null) return null;
+  const text = String(value).trim();
+  return text || null;
+}
+
 function normalizeWorkStats(raw, source = 'api') {
   if (!raw || typeof raw !== 'object') return null;
   const statistics = raw.statistics || raw.stats || raw.video_stats || raw;
+  const author = raw.author || raw.user || raw.user_info || {};
   const publish = normalizePublishTime(firstValue(raw, ['create_time', 'createTime', 'publish_time', 'publishTime', 'publish_time_raw']));
   const row = {
+    author_nickname: normalizeText(firstValue(author, ['nickname', 'name', 'unique_id', 'short_id']) || firstValue(raw, ['author_nickname', 'authorName', 'nickname'])),
+    work_title: normalizeText(firstValue(raw, ['desc', 'title', 'aweme_title', 'item_title', 'content'])),
     like_count: normalizeCount(firstValue(statistics, ['digg_count', 'like_count', 'liked_count', 'likes'])),
     comment_count: normalizeCount(firstValue(statistics, ['comment_count', 'commentCount', 'comments'])),
     collect_count: normalizeCount(firstValue(statistics, ['collect_count', 'collection_count', 'favorite_count', 'favourite_count'])),
     share_count: normalizeCount(firstValue(statistics, ['share_count', 'shareCount', 'shares'])),
-    publish_time: publish.iso,
+    publish_time: publish.formatted,
     publish_timestamp: publish.timestamp,
     publish_time_raw: publish.raw,
     source,
   };
-  const hasAny = ['like_count', 'comment_count', 'collect_count', 'share_count', 'publish_time', 'publish_timestamp', 'publish_time_raw']
+  const hasAny = ['author_nickname', 'work_title', 'like_count', 'comment_count', 'collect_count', 'share_count', 'publish_time', 'publish_timestamp', 'publish_time_raw']
     .some((key) => row[key] != null);
   return hasAny ? row : null;
 }
@@ -223,7 +248,7 @@ function collectWorkStats(value, targetId, out = []) {
     value.publishTime;
   if (idMatches && looksLikeWork) {
     const stats = normalizeWorkStats(value, 'api');
-    if (stats) out.push(stats);
+    if (stats) out.push({ ...stats, candidate_aweme_id: rawId ? String(rawId) : null });
   }
 
   for (const key of ['aweme_detail', 'aweme_details', 'aweme_list', 'item_list', 'items', 'data']) {
@@ -235,10 +260,6 @@ function collectWorkStats(value, targetId, out = []) {
 function csvEscape(value) {
   const text = value == null ? '' : String(value);
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
-
-function outputBase(target) {
-  return target.awemeId ? `douyin_work_stats_${target.awemeId}` : `douyin_work_stats_${Date.now()}`;
 }
 
 function domStatsExpression() {
@@ -283,38 +304,53 @@ function domStatsExpression() {
   `;
 }
 
-async function writeOutputs(outDir, base, payload) {
-  await fs.mkdir(outDir, { recursive: true });
-  const jsonPath = path.join(outDir, `${base}.json`);
-  const csvPath = path.join(outDir, `${base}.csv`);
-  await fs.writeFile(jsonPath, JSON.stringify(payload, null, 2));
+async function closePage(cdp, page) {
+  if (page.shouldCloseTarget && page.id) {
+    await cdp.send('Target.closeTarget', { targetId: page.id }).catch(() => {});
+  }
+  cdp.close();
+}
 
+async function writeSummaryCsv(outDir, rows) {
+  await fs.mkdir(outDir, { recursive: true });
+  const csvPath = path.join(outDir, 'douyin_work_stats_summary.csv');
   const columns = [
-    'awemeId',
-    'itemType',
-    'inputUrl',
-    'targetUrl',
-    'title',
-    'like_count',
-    'comment_count',
-    'collect_count',
-    'share_count',
-    'publish_time',
-    'publish_timestamp',
-    'publish_time_raw',
-    'source',
-    'scrapedAt',
+    ['达人昵称', 'author_nickname'],
+    ['awemeId', 'awemeId'],
+    ['作品链接', 'targetUrl'],
+    ['作品标题', 'title'],
+    ['发布时间', 'publish_time'],
+    ['点赞', 'like_count'],
+    ['评论', 'comment_count'],
+    ['收藏', 'collect_count'],
+    ['转发', 'share_count'],
   ];
-  const row = columns.map((key) => csvEscape(payload[key] ?? payload.stats?.[key])).join(',');
-  await fs.writeFile(csvPath, [columns.join(','), row].join('\n'));
-  return { jsonPath, csvPath };
+  const lines = [
+    columns.map(([label]) => label).join(','),
+    ...rows.map((row) => columns.map(([, key]) => csvEscape(row[key])).join(',')),
+  ];
+  await fs.writeFile(csvPath, `${lines.join('\n')}\n`);
+  return csvPath;
 }
 
 async function scrapeOne(target, options) {
   const page = await createPage(options.cdpBase);
   const cdp = await connect(page.webSocketDebuggerUrl);
   const responseUrls = new Map();
+  const statsCandidates = [];
+  let effectiveAwemeId = target.awemeId;
   let stats = null;
+
+  const rebuildStats = () => {
+    stats = null;
+    for (const candidate of statsCandidates) {
+      const candidateId = candidate.candidate_aweme_id;
+      const matches = effectiveAwemeId
+        ? (!candidateId || String(candidateId) === String(effectiveAwemeId))
+        : !candidateId;
+      if (matches) stats = mergeWorkStats(stats, candidate);
+    }
+  };
 
   try {
     cdp.on('Network.responseReceived', (params) => {
@@ -331,9 +367,8 @@ async function scrapeOne(target, options) {
       try {
         const body = await cdp.send('Network.getResponseBody', { requestId: params.requestId });
         const parsed = JSON.parse(body.body);
-        for (const candidate of collectWorkStats(parsed, target.awemeId)) {
-          stats = mergeWorkStats(stats, candidate);
-        }
+        statsCandidates.push(...collectWorkStats(parsed, effectiveAwemeId));
+        rebuildStats();
         if (stats) console.log(`[${target.awemeId || target.url}] stats from ${new URL(url).pathname}`);
       } catch {
         // Some responses are not JSON, encoded, cached, or already evicted from CDP.
@@ -352,6 +387,15 @@ async function scrapeOne(target, options) {
       await cdp.send('Runtime.evaluate', {
         expression: 'window.scrollBy(0, Math.max(300, innerHeight * 0.35))',
       }).catch(() => {});
+      const href = await cdp.send('Runtime.evaluate', {
+        expression: 'location.href',
+        returnByValue: true,
+      }).then((result) => result.result?.value).catch(() => null);
+      const currentWork = href ? workFromUrl(href) : { id: null };
+      if (currentWork.id && currentWork.id !== effectiveAwemeId) {
+        effectiveAwemeId = currentWork.id;
+        rebuildStats();
+      }
       if (stats?.like_count != null && stats?.comment_count != null && stats?.collect_count != null && stats?.share_count != null && (stats?.publish_time || stats?.publish_time_raw)) {
         break;
       }
@@ -368,12 +412,16 @@ async function scrapeOne(target, options) {
     stats = mergeWorkStats(stats, domStats) || {};
 
     const publish = normalizePublishTime(stats.publish_time || stats.publish_time_raw);
-    if (!stats.publish_time && publish.iso) stats.publish_time = publish.iso;
+    if (!stats.publish_time && publish.formatted) stats.publish_time = publish.formatted;
     if (!stats.publish_timestamp && publish.timestamp) stats.publish_timestamp = publish.timestamp;
 
     const finalUrl = finalState.href || target.url;
     const finalWork = workFromUrl(finalUrl);
     const finalId = finalWork.id || target.awemeId;
+    if (finalId && finalId !== effectiveAwemeId) {
+      effectiveAwemeId = finalId;
+      rebuildStats();
+    }
     const finalType = finalWork.type || target.itemType;
     const finalTarget = {
       ...target,
@@ -386,16 +434,16 @@ async function scrapeOne(target, options) {
       targetUrl: finalTarget.url,
       awemeId: finalTarget.awemeId,
       itemType: finalTarget.itemType,
-      title: finalState.title || null,
+      author_nickname: stats.author_nickname || null,
+      title: stats.work_title || finalState.title || null,
       scrapedAt: new Date().toISOString(),
       ...stats,
       stats,
     };
-    const files = await writeOutputs(options.outDir, outputBase(finalTarget), payload);
-    cdp.close();
-    return { ...files, ...payload };
+    await closePage(cdp, page);
+    return payload;
   } catch (error) {
-    cdp.close();
+    await closePage(cdp, page);
     throw error;
   }
 }
@@ -443,9 +491,8 @@ async function main() {
 
   const targets = urls.map(normalizeTarget);
   const results = await runWithConcurrency(targets, options.concurrency, (target) => scrapeOne(target, options));
-  await fs.mkdir(options.outDir, { recursive: true });
-  await fs.writeFile(path.join(options.outDir, 'douyin_work_stats_summary.json'), JSON.stringify(results, null, 2));
-  console.log(JSON.stringify(results, null, 2));
+  const csvPath = await writeSummaryCsv(options.outDir, results);
+  console.log(`Wrote ${results.length} rows to ${csvPath}`);
 }
 
 main().catch((error) => {

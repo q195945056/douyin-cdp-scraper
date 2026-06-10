@@ -95,14 +95,18 @@ https://www.douyin.com/video/...
 并发抓取：
 
 ```text
-[$douyin-cdp-scraper] 批量抓取 urls.txt 里的作品数据，并发数 2，导出到 ./douyin-work-stats
+[$douyin-cdp-scraper] 批量抓取这些作品数据，并发数 2，导出到 ./douyin-work-stats：
+https://www.douyin.com/video/...
+https://www.douyin.com/video/...
 ```
 
-作品数据输出字段包括：
+作品数据只输出一个汇总 CSV：`douyin_work_stats_summary.csv`，表头包括：
 
 ```text
-like_count, comment_count, collect_count, share_count, publish_time, publish_timestamp
+达人昵称, awemeId, 作品链接, 作品标题, 发布时间, 点赞, 评论, 收藏, 转发
 ```
+
+其中发布时间使用北京时间 `yyyy-MM-dd HH:mm:ss` 格式。
 
 ## 使用前准备
 
