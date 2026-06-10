@@ -13,7 +13,7 @@ process.env.NO_PROXY = [process.env.NO_PROXY, '127.0.0.1', 'localhost']
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const defaults = {
   cdpBase: process.env.CDP_BASE || 'http://127.0.0.1:9222',
-  maxRunMs: Number(process.env.MAX_RUN_MS || 20000),
+  maxRunMs: Number(process.env.MAX_RUN_MS || 40000),
   concurrency: Number(process.env.CONCURRENCY || 1),
   outDir: process.cwd(),
 };

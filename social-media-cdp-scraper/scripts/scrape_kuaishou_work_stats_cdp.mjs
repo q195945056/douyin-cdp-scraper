@@ -10,7 +10,7 @@ process.env.NO_PROXY = [process.env.NO_PROXY, '127.0.0.1', 'localhost']
 
 const defaults = {
   cdpBase: process.env.CDP_BASE || 'http://127.0.0.1:9222',
-  maxRunMs: Number(process.env.MAX_RUN_MS || 20000),
+  maxRunMs: Number(process.env.MAX_RUN_MS || 40000),
   concurrency: Number(process.env.CONCURRENCY || 1),
   outDir: process.cwd(),
 };
@@ -537,6 +537,14 @@ async function scrapeOne(target, options, session) {
       if (matches) stats = mergeWorkStats(stats, candidate);
     }
   };
+  const mergeDomStats = async () => {
+    const domStats = await cdp.send('Runtime.evaluate', {
+      expression: domStatsExpression(),
+      returnByValue: true,
+    }).then((result) => result.result?.value || null).catch(() => null);
+    stats = mergeWorkStats(stats, domStats);
+  };
+  const hasCoreStats = () => stats?.like_count != null && stats?.comment_count != null && stats?.collect_count != null;
 
   try {
     offResponseReceived = cdp.on('Network.responseReceived', (params) => {
@@ -566,7 +574,12 @@ async function scrapeOne(target, options, session) {
 
     const startedAt = Date.now();
     while (Date.now() - startedAt < options.maxRunMs) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const readyState = await cdp.send('Runtime.evaluate', {
+        expression: 'document.readyState',
+        returnByValue: true,
+      }).then((result) => result.result?.value).catch(() => null);
+      if (readyState === 'loading') continue;
       await cdp.send('Runtime.evaluate', {
         expression: 'window.scrollBy(0, Math.max(300, innerHeight * 0.35))',
       }).catch(() => {});
@@ -579,9 +592,8 @@ async function scrapeOne(target, options, session) {
         addEffectiveIds(currentWork);
         rebuildStats();
       }
-      if (stats?.like_count != null && stats?.comment_count != null && (stats?.publish_time || stats?.publish_time_raw)) {
-        break;
-      }
+      await mergeDomStats();
+      if (hasCoreStats()) break;
     }
 
     const finalState = await cdp.send('Runtime.evaluate', {
@@ -601,12 +613,8 @@ async function scrapeOne(target, options, session) {
     const finalId = finalWork.id || target.photoId;
     addEffectiveIds(finalWork);
     rebuildStats();
-    const domStats = await cdp.send('Runtime.evaluate', {
-      expression: domStatsExpression(),
-      returnByValue: true,
-    }).then((result) => result.result?.value || null).catch(() => null);
     stats = stats || {};
-    stats = mergeWorkStats(stats, domStats);
+    await mergeDomStats();
     const publish = normalizePublishTime(stats.publish_time || stats.publish_time_raw);
     if (!stats.publish_time && publish.formatted) stats.publish_time = publish.formatted;
     if (!stats.publish_timestamp && publish.timestamp) stats.publish_timestamp = publish.timestamp;
