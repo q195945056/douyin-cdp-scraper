@@ -20,7 +20,7 @@ The scraper exports one summary CSV with these Chinese headers:
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/scrape_kuaishou_work_stats_cdp.mjs \
+  node /Users/yanmingjun/.codex/skills/social-media-cdp-scraper/scripts/scrape_kuaishou_work_stats_cdp.mjs \
   --url "https://www.kuaishou.com/short-video/3xe9fv8asqzes6i" \
   --concurrency 1 \
   --out-dir ./kuaishou-work-stats
@@ -30,7 +30,7 @@ env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/scrape_kuaishou_work_stats_cdp.mjs \
+  node /Users/yanmingjun/.codex/skills/social-media-cdp-scraper/scripts/scrape_kuaishou_work_stats_cdp.mjs \
   --url "https://www.kuaishou.com/f/X-2mC8JJMsBkp1yn" \
   --url "https://v.kuaishou.com/KNtcMaqR" \
   --concurrency 2 \

@@ -1,9 +1,9 @@
 ---
-name: douyin-cdp-scraper
-description: Scrape Douyin or Kuaishou comments and work-level metrics through a real Chrome browser connected by Chrome DevTools Protocol (CDP). Use when the user asks to 抓取/导出/采集 抖音/快手作品数据、作品评论、评论明细、点赞数、评论数、收藏数、转发数、发布时间, or provides Douyin/Kuaishou links for CSV exports.
+name: social-media-cdp-scraper
+description: Scrape social media comments and work-level metrics through a real Chrome browser connected by Chrome DevTools Protocol (CDP). Use when the user asks to 抓取/导出/采集 抖音/快手作品数据、作品评论、评论明细、点赞数、评论数、收藏数、转发数、发布时间, or provides social media links for CSV exports.
 ---
 
-# Douyin/Kuaishou CDP Scraper
+# Social Media CDP Scraper
 
 Use this unified skill for both Douyin and Kuaishou. The router scripts auto-detect the platform from each URL and call the correct platform-specific scraper.
 
@@ -25,7 +25,7 @@ curl -s http://127.0.0.1:9222/json/version
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/ensure_chrome_cdp.mjs
+  node /Users/yanmingjun/.codex/skills/social-media-cdp-scraper/scripts/ensure_chrome_cdp.mjs
 ```
 
 The helper uses a fixed persistent profile at `~/.codex/chrome-profiles/douyin-cdp` by default. This keeps login state across workspaces and future skill runs.

@@ -26,7 +26,7 @@ The scraper exports:
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/scrape_douyin_work_stats_cdp.mjs \
+  node /Users/yanmingjun/.codex/skills/social-media-cdp-scraper/scripts/scrape_douyin_work_stats_cdp.mjs \
   --url "https://www.douyin.com/video/7598470240644664611" \
   --concurrency 1 \
   --out-dir ./douyin-work-stats
@@ -38,7 +38,7 @@ Pass `--url` multiple times. Use `--concurrency N` for parallel scraping:
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/scrape_douyin_work_stats_cdp.mjs \
+  node /Users/yanmingjun/.codex/skills/social-media-cdp-scraper/scripts/scrape_douyin_work_stats_cdp.mjs \
   --url "https://www.douyin.com/video/7598470240644664611" \
   --url "https://www.douyin.com/video/7598470240644664612" \
   --concurrency 2 \

@@ -13,7 +13,7 @@ Use this reference when the user asks to scrape or export Kuaishou work comments
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/scrape_kuaishou_comments_cdp.mjs \
+  node /Users/yanmingjun/.codex/skills/social-media-cdp-scraper/scripts/scrape_kuaishou_comments_cdp.mjs \
   --url "https://www.kuaishou.com/short-video/3xe9fv8asqzes6i" \
   --max 1000 \
   --concurrency 1 \
@@ -24,7 +24,7 @@ env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/scrape_kuaishou_comments_cdp.mjs \
+  node /Users/yanmingjun/.codex/skills/social-media-cdp-scraper/scripts/scrape_kuaishou_comments_cdp.mjs \
   --url "https://www.kuaishou.com/f/X-2mC8JJMsBkp1yn" \
   --url "https://v.kuaishou.com/KNtcMaqR" \
   --max 500 \

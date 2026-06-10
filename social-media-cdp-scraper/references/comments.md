@@ -1,10 +1,10 @@
 # Unified Comment Export
 
-Use this reference when the user asks to scrape or export Douyin or Kuaishou work comments.
+Use this reference when the user asks to scrape or export social media work comments.
 
 ## Input
 
-- Accept one Douyin/Kuaishou URL or many URLs, including mixed-platform batches.
+- Accept one social media URL or many URLs, including mixed-platform batches.
 - Pass `--url` multiple times. Do not create intermediate `.txt` files unless the user explicitly provides one.
 - Default to `--max 1000` unless the user gives another per-work limit.
 - The router auto-detects platform from domains such as `douyin.com`, `v.douyin.com`, `kuaishou.com`, `v.kuaishou.com`, and `chenzhongtech.com`.
@@ -13,7 +13,7 @@ Use this reference when the user asks to scrape or export Douyin or Kuaishou wor
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/scrape_platform_comments_cdp.mjs \
+  node /Users/yanmingjun/.codex/skills/social-media-cdp-scraper/scripts/scrape_platform_comments_cdp.mjs \
   --url "https://www.douyin.com/video/7598470240644664611" \
   --url "https://v.kuaishou.com/KNtcMaqR" \
   --max 1000 \

@@ -1,4 +1,4 @@
 interface:
-  display_name: "Douyin/Kuaishou CDP Scraper"
-  short_description: "Scrape Douyin or Kuaishou comments and work metrics through Chrome CDP"
-  default_prompt: "Use $douyin-cdp-scraper to scrape comments or work metrics from these Douyin or Kuaishou links."
+  display_name: "Social Media CDP Scraper"
+  short_description: "Scrape social media comments and work metrics through Chrome CDP"
+  default_prompt: "Use $social-media-cdp-scraper to scrape comments or work metrics from these social media links."

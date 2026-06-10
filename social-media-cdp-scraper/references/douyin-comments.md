@@ -12,7 +12,7 @@ Use this reference when the user asks to scrape or export Douyin work comments.
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/scrape_douyin_comments_cdp.mjs \
+  node /Users/yanmingjun/.codex/skills/social-media-cdp-scraper/scripts/scrape_douyin_comments_cdp.mjs \
   --url "https://www.douyin.com/video/7598470240644664611" \
   --max 1000 \
   --concurrency 1 \
@@ -25,7 +25,7 @@ Pass `--url` multiple times:
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/scrape_douyin_comments_cdp.mjs \
+  node /Users/yanmingjun/.codex/skills/social-media-cdp-scraper/scripts/scrape_douyin_comments_cdp.mjs \
   --url "https://www.douyin.com/video/7598470240644664611" \
   --url "https://www.douyin.com/video/7598470240644664612" \
   --max 500 \
