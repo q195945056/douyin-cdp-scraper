@@ -23,7 +23,7 @@ The scraper exports:
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-comments-cdp/scripts/scrape_douyin_work_stats_cdp.mjs \
+  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/scrape_douyin_work_stats_cdp.mjs \
   --url "https://www.douyin.com/video/7598470240644664611" \
   --concurrency 1 \
   --out-dir ./douyin-work-stats
@@ -35,7 +35,7 @@ Pass `--url` multiple times or create a newline-delimited URL file. Use `--concu
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-comments-cdp/scripts/scrape_douyin_work_stats_cdp.mjs \
+  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/scrape_douyin_work_stats_cdp.mjs \
   --input urls.txt \
   --concurrency 2 \
   --out-dir ./douyin-work-stats

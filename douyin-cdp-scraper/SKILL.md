@@ -1,9 +1,9 @@
 ---
-name: douyin-comments-cdp
+name: douyin-cdp-scraper
 description: Scrape Douyin comments or work-level metrics through a real Chrome browser connected by Chrome DevTools Protocol (CDP). Use when the user asks to 抓取/导出/采集 抖音作品评论, 评论明细, 点赞数, 评论数, 收藏数, 转发数, 发布时间, or provides Douyin video/search/modal links for JSON/CSV exports.
 ---
 
-# Douyin Comments CDP
+# Douyin CDP Scraper
 
 Use a real Chrome instance with CDP enabled, then choose the appropriate capability reference:
 
@@ -26,7 +26,7 @@ curl -s http://127.0.0.1:9222/json/version
 
 ```bash
 env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
-  node /Users/yanmingjun/.codex/skills/douyin-comments-cdp/scripts/ensure_chrome_cdp.mjs
+  node /Users/yanmingjun/.codex/skills/douyin-cdp-scraper/scripts/ensure_chrome_cdp.mjs
 ```
 
 The helper uses a fixed persistent profile at `~/.codex/chrome-profiles/douyin-cdp` by default. This keeps Douyin login state across workspaces and future skill runs. If the user wants a different persistent CDP profile, set `DOUYIN_CDP_USER_DATA_DIR=/absolute/path`.
